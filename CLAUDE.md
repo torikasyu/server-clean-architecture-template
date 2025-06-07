@@ -25,7 +25,7 @@ modules/
 The `weather` module demonstrates the architecture pattern:
 - **Domain Object**: `Weather` interface with id, location, temperature, and description
 - **Repository Interface**: `GetWeatherFunc` type defining the data access contract
-- **Infrastructure**: Two implementations - `getWeatherFromAPI` (external API) and `getWeatherFromConst` (mock data)
+- **Infrastructure**: Two implementations - `getWeatherFromAPI` (external API) and `getWeatherMock` (mock data)
 - **Note**: The infrastructure implementations are in `domain/infra/Repository/` with capital 'R'
 
 ## Development Commands
@@ -42,7 +42,9 @@ The `weather` module demonstrates the architecture pattern:
 - Jest is configured with TypeScript support via ts-jest
 - Test files should use `.test.ts` or `.spec.ts` extensions
 - Tests are located alongside source files
-- Use `@jest/globals` for importing Jest functions
+- Use `@jest/globals` for importing Jest functions (e.g., `import { describe, expect, it, jest } from '@jest/globals'`)
+- Run a single test file: `npm test path/to/file.test.ts`
+- Run tests matching a pattern: `npm test -- --testNamePattern="pattern"`
 
 **Note**: The project still needs:
 - `dev`: Development server with hot reload
@@ -63,9 +65,20 @@ When implementing features in this clean architecture:
 - Repository interfaces use function type definitions (not classes/interfaces)
 - Infrastructure implementations export functions matching these types
 - Multiple implementations can exist (e.g., API vs mock data sources)
+- When handling external API responses, use proper type guards and explicit type conversions for safety
+
+## Configuration Files
+
+- **jest.config.js**: Jest configuration with TypeScript preset, configured to run tests in the modules directory
+- **tsconfig.json**: TypeScript configuration with strict mode enabled, ES2020 target, and proper module resolution
+- **.gitignore**: Standard Node.js/TypeScript ignore patterns
 
 ## Dependencies
 
 - **express**: ^5.1.0 - Web framework
 - **typescript**: ^5.8.3 (dev) - TypeScript compiler
+- **jest**: ^29.7.0 (dev) - Testing framework
+- **ts-jest**: ^29.3.4 (dev) - TypeScript preprocessor for Jest
 - **@types/node**: ^22.15.30 (dev) - Node.js type definitions
+- **@types/jest**: ^29.5.14 (dev) - Jest type definitions
+- **@jest/globals**: ^30.0.0-beta.3 (dev) - Jest global imports
