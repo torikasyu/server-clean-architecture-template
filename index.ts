@@ -3,15 +3,35 @@ import { setupWeatherControllers } from './modules/weather/controllers'
 
 export const startApplication = async () => {
 
-  const host = process.env.HOST || 'localhost'
   const port = process.env.PORT || 3000
+
+  const app = await setupApplication()
+  app.listen(port)
+
+  console.log(`Server is running at http://localhost:${port}`)
+}
+
+export const setupApplication = async (): Promise<express.Application> => {
 
   const app = express()
 
+  // Middleware setup
+  app.use(express.json())
+  app.use(express.urlencoded({ extended: true }))
+
+  // CORS設定
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*')
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    next()
+  })
+
+  // Router setup
   setupWeatherControllers(app)
 
-  const server = app.listen(port)
-  console.log(`Server is running at http://${host}:${port}`)
+  return app
 }
+
 
 startApplication().then(() => console.log('Application started successfully'))

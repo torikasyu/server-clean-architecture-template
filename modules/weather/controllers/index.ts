@@ -10,7 +10,7 @@ export const setupWeatherControllers = (application: Application) => {
 
     router.get('/weather/:location', setupGetWeatherController());
 
-    application.use('/api/v1/', router);
+    application.use('/api/', router);
 }
 
 const setupGetWeatherController = () => {
