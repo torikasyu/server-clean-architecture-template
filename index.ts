@@ -34,4 +34,7 @@ export const setupApplication = async (): Promise<express.Application> => {
 }
 
 
-startApplication().then(() => console.log('Application started successfully'))
+// Only start the server if this file is run directly
+if (require.main === module) {
+  startApplication().then(() => console.log('Application started successfully'))
+}
