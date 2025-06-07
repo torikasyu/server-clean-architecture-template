@@ -1,6 +1,11 @@
+import { GetWeatherFunc } from "../domain/repositories";
 import { GetWeatherUsecase } from "../domain/usecases";
 
-export const getWeatherUsecase: GetWeatherUsecase = (getWeatherFunc) =>
+type Dependency = {
+    getWeatherFunc: GetWeatherFunc
+}
+
+export const getWeatherUsecase = ({ getWeatherFunc }: Dependency): GetWeatherUsecase =>
     (location: string) => {
         return getWeatherFunc(location);
     }
