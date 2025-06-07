@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "effect": "^3.16.4",
     "express": "^5.1.0"
   },
   "devDependencies": {

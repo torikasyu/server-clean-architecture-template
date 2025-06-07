@@ -1,12 +1,20 @@
+import { describe, expect, it } from '@jest/globals';
+import { Effect, Either } from 'effect';
 import { getWeatherMock } from './getWeatherMock';
+import { WeatherRepositoryError } from '../domain/entities/error';
 
 describe('getWeatherMock', () => {
-  it('should return weather data for a given location', async () => {
-    const location = 'Tokyo';
-    const result = await getWeatherMock(location);
 
-    expect(result).not.toBeNull();
-    expect(result).toEqual({
+  it('天気が取得できる', async () => {
+    const result = await Effect.runPromise(
+      Effect.either(getWeatherMock('Tokyo'))
+    );
+
+    if (Either.isLeft(result)) {
+      throw result.left;
+    }
+
+    expect(result.right).toEqual({
       id: '1',
       location: 'Tokyo',
       temperature: 25,
@@ -14,35 +22,17 @@ describe('getWeatherMock', () => {
     });
   });
 
-  it('should handle different locations', async () => {
-    const location = 'New York';
-    const result = await getWeatherMock(location);
-
-    expect(result).not.toBeNull();
-    expect(result?.location).toBe('New York');
-  });
-
-  it('should return null on error', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    
-    // Mock an error by passing undefined and forcing an error
-    const getWeatherMockWithError = async (_location: string) => {
-      try {
-        throw new Error('Simulated error');
-      } catch (error) {
-        console.error('Error fetching weather data from mock:', error);
-        return null;
-      }
-    };
-
-    const result = await getWeatherMockWithError('Tokyo');
-    
-    expect(result).toBeNull();
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error fetching weather data from mock:',
-      expect.any(Error)
+  it('場所が空白の場合はエラーを返す', async () => {
+    const result = await Effect.runPromise(
+      Effect.either(getWeatherMock(''))
     );
 
-    consoleErrorSpy.mockRestore();
+    if (Either.isRight(result)) {
+      throw new Error('エラーが発生しなかった');
+    }
+
+    expect(result.left).toBeInstanceOf(WeatherRepositoryError);
+    expect(result.left.message).toBe('Location cannot be empty');
   });
-});
+
+})

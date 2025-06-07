@@ -4,3 +4,10 @@ export class WeatherRepositoryError extends Error {
     super(message);
   }
 };
+
+export class WeatherValidationError extends Error {
+  readonly _tag = "WeatherValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
