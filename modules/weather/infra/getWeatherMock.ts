@@ -1,5 +1,5 @@
 import { Weather } from "../domain/entities/Weather";
-import { GetWeatherFunc } from "../domain/repositories/WeatherRepository";
+import { GetWeatherFunc } from "../domain/repositories";
 
 export const getWeatherMock: GetWeatherFunc = async (location) => {
   try {

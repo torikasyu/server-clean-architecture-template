@@ -1,4 +1,4 @@
-import { GetWeatherUsecase } from "../domain/usecases/WeatherUsecase";
+import { GetWeatherUsecase } from "../domain/usecases";
 
 export const getWeatherUsecase: GetWeatherUsecase = (getWeatherFunc) =>
     (location: string) => {

@@ -1,4 +1,4 @@
-import { GetWeatherFunc } from "../domain/repositories/WeatherRepository";
+import { GetWeatherFunc } from "../domain/repositories";
 
 export const getWeatherFromAPI: GetWeatherFunc = async (location) => {
   try {
