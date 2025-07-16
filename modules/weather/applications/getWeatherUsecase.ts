@@ -1,11 +1,11 @@
 import { GetWeatherFunc } from "../domain/repositories";
-import { GetWeatherUsecase } from "../domain/usecases";
+import { IGetWeatherUsecase, GetWeatherRequest } from "../domain/usecases/IGetWeatherUseCase";
 
 type Dependency = {
-    getWeatherFunc: GetWeatherFunc
+    getWeatherFunc: GetWeatherFunc;
 }
 
-export const getWeatherUsecase = ({ getWeatherFunc }: Dependency): GetWeatherUsecase =>
-    (location: string) => {
-        return getWeatherFunc(location);
+export const getWeatherUsecase = ({ getWeatherFunc }: Dependency): IGetWeatherUsecase =>
+    (req: GetWeatherRequest) => {
+        return getWeatherFunc(req.location);
     }

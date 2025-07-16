@@ -1,8 +1,8 @@
 import { Effect, pipe } from "effect";
-import { GetWeatherUsecase } from "../domain/usecases";
+import { IGetWeatherUsecase, GetWeatherRequest } from "../domain/usecases/IGetWeatherUseCase";
 import express from "express";
 
-export const getWeatherController = (getWeatherUsecase: GetWeatherUsecase) => 
+export const getWeatherController = (getWeatherUsecase: IGetWeatherUsecase) => 
     (req: express.Request, res: express.Response) => {
         const location = req.params.location;
 
@@ -11,8 +11,10 @@ export const getWeatherController = (getWeatherUsecase: GetWeatherUsecase) =>
             return;
         }
 
+        const getWeatherRequest: GetWeatherRequest = {location}
+
         pipe(
-            getWeatherUsecase(location),
+            getWeatherUsecase(getWeatherRequest),
             Effect.match({
                 onFailure: (_error) => res.status(500).json({ error: "Failed to get weather" }),
                 onSuccess: (weather) => res.status(200).json(weather)
