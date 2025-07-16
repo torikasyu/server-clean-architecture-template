@@ -18,10 +18,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "paths": {
-      "@/domain/*" : ["modules/"]
-    }
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["modules/**/*", "types/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]

@@ -7,7 +7,3 @@ export type IGetWeatherUsecase = (req: GetWeatherRequest) => Effect.Effect<Weath
 export type GetWeatherRequest = {
     location: string;
 }
-
-export type GetWeatherResponse = {
-    weather: Weather;
-}

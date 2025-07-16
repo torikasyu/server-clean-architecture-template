@@ -1,5 +1,5 @@
 import express from 'express'
-import { setupWeatherControllers } from './modules/weather/infra/routes'
+import { setupWeatherControllers } from './modules/routes'
 
 export const startApplication = async () => {
 
