@@ -11,22 +11,28 @@ This is a TypeScript Express.js template following Clean Architecture principles
 The codebase follows Clean Architecture with this structure:
 ```
 modules/
+├── factory/            # Dependency injection setup
+├── routes/             # API route configuration  
 └── [feature]/
-    ├── controllers/    # Presentation layer (Express routes/controllers)
+    ├── applications/   # Use case implementations (interactors)
+    ├── controllers/    # Presentation layer (Express route handlers)
     ├── domain/         # Core business logic
-    │   ├── object/     # Domain entities/models
-    │   ├── repository/ # Repository interfaces
-    │   └── infra/      # Infrastructure implementations
-    └── usecases/       # Application business rules
+    │   ├── entities/   # Domain entities/models
+    │   ├── repositories/ # Repository interfaces (function types)
+    │   └── usecases/   # Use case interfaces
+    └── infra/          # Infrastructure implementations
 ```
 
 ### Current Implementation
 
 The `weather` module demonstrates the architecture pattern:
-- **Domain Object**: `Weather` interface with id, location, temperature, and description
+- **Domain Entity**: `Weather` interface with id, location, temperature, and description
 - **Repository Interface**: `GetWeatherFunc` type defining the data access contract
+- **Use Case Interface**: `IGetWeatherUsecase` in `domain/usecases/`
+- **Use Case Implementation**: `getWeatherUsecase` in `applications/`
 - **Infrastructure**: Two implementations - `getWeatherFromAPI` (external API) and `getWeatherMock` (mock data)
-- **Note**: The infrastructure implementations are in `domain/infra/Repository/` with capital 'R'
+- **Factory**: Dependency injection setup in `modules/factory/`
+- **Routes**: API routing configuration in `modules/routes/`
 
 ## Development Commands
 
@@ -55,17 +61,34 @@ The `weather` module demonstrates the architecture pattern:
 
 When implementing features in this clean architecture:
 
-1. **Domain Objects** (`modules/[feature]/domain/object/`): Pure TypeScript interfaces/classes representing business entities
-2. **Repository Interfaces** (`modules/[feature]/domain/repository/`): Type definitions for data access functions (e.g., `GetWeatherFunc`)
-3. **Infrastructure** (`modules/[feature]/domain/infra/Repository/`): Concrete implementations of repository functions
-4. **Use Cases** (`modules/[feature]/usecases/`): Business logic implementation, orchestrating domain objects and repositories
+1. **Domain Entities** (`modules/[feature]/domain/entities/`): Pure TypeScript interfaces/classes representing business entities
+2. **Repository Interfaces** (`modules/[feature]/domain/repositories/`): Function type definitions for data access (e.g., `GetWeatherFunc`)
+3. **Use Case Interfaces** (`modules/[feature]/domain/usecases/`): Interface definitions for application business rules
+4. **Use Case Implementations** (`modules/[feature]/applications/`): Business logic implementation, orchestrating domain objects and repositories (also called interactors)
 5. **Controllers** (`modules/[feature]/controllers/`): Express route handlers, calling use cases and handling HTTP concerns
+6. **Infrastructure** (`modules/[feature]/infra/`): Concrete implementations of repository functions
+7. **Factory** (`modules/factory/`): Dependency injection configuration
+8. **Routes** (`modules/routes/`): API routing setup, importing from factory
 
-### Repository Pattern
+### Architecture Patterns
+
+#### Repository Pattern
 - Repository interfaces use function type definitions (not classes/interfaces)
 - Infrastructure implementations export functions matching these types
 - Multiple implementations can exist (e.g., API vs mock data sources)
 - When handling external API responses, use proper type guards and explicit type conversions for safety
+
+#### Use Case Pattern
+- Use case interfaces are defined in `domain/usecases/` using function types
+- Use case implementations (interactors) are in `applications/`
+- Use cases orchestrate domain entities and repository functions
+- Each use case focuses on a single business operation
+
+#### Dependency Injection
+- Factory pattern is used for dependency injection configuration
+- Controllers receive pre-configured use cases from the factory
+- Routes import and use factories to set up endpoint handlers
+- This maintains proper dependency direction (outer layers depend on inner layers)
 
 ## Configuration Files
 

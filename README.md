@@ -11,12 +11,15 @@ project-root/
 │       └── [feature]/
 │           └── [controller].test.ts
 ├── modules/                   # 機能別モジュール
+│   ├── factory/              # 依存性注入設定
+│   │   └── index.ts         # DIコンテナ・ファクトリ
+│   ├── routes/               # API ルーティング設定
+│   │   └── index.ts         # Express ルート設定
 │   └── [feature]/            # 機能名（例：weather, user, product）
 │       ├── applications/     # アプリケーション層（ユースケース実装）
 │       │   └── [usecase].ts
 │       ├── controllers/      # プレゼンテーション層
-│       │   ├── [controller].ts
-│       │   └── index.ts
+│       │   └── [controller].ts
 │       ├── domain/           # ドメイン層
 │       │   ├── entities/     # エンティティ（ビジネスオブジェクト）
 │       │   │   ├── [Entity].ts
@@ -30,6 +33,7 @@ project-root/
 │           ├── [repository implementation].ts
 │           └── [repository implementation].test.ts
 ├── index.ts                  # アプリケーションエントリーポイント
+├── CLAUDE.md                 # Claude Code向けプロジェクト指示書
 ├── package.json
 ├── tsconfig.json
 ├── jest.config.js
@@ -290,26 +294,39 @@ export const getWeatherController = (getWeatherUsecase: GetWeatherUsecase) =>
     };
 ```
 
-### 8. コントローラーセットアップ (controllers/index.ts)
+### 8. ファクトリー設定 (modules/factory/index.ts)
 ```typescript
-import express from 'express'
-import { getWeatherController } from './getWeatherController'
-import { getWeatherUsecase } from '../applications/getWeatherUsecase'
-import { getWeatherMock } from '../infra/getWeatherMock'
+import { getWeatherController } from '../weather/controllers/getWeatherController';
+import { getWeatherUsecase } from '../weather/applications/getWeatherUsecase';
+import { getWeatherFromAPI } from '../weather/infra/getWeatherFromAPI';
 
-export const setupWeatherControllers = (app: express.Application) => {
-    // 依存性注入
-    const weatherUsecase = getWeatherUsecase({ getWeatherFunc: getWeatherMock })
-    
-    // ルート設定
-    app.get('/api/weather/:location', getWeatherController(weatherUsecase))
+export const setupGetWeatherController = () => {
+    const dependency = {
+        getWeatherFunc: getWeatherFromAPI
+    }
+    return getWeatherController(getWeatherUsecase(dependency));
 }
 ```
 
-### 9. メインアプリケーション (index.ts)
+### 9. ルーティング設定 (modules/routes/index.ts) 
 ```typescript
 import express from 'express'
-import { setupWeatherControllers } from './modules/weather/controllers'
+import { Application } from 'express'
+import { setupGetWeatherController } from '../factory';
+
+export const setupWeatherControllers = (application: Application) => {
+    const router = express.Router();
+
+    router.get('/weather/:location', setupGetWeatherController());
+
+    application.use('/api/', router);
+}
+```
+
+### 10. メインアプリケーション (index.ts)
+```typescript
+import express from 'express'
+import { setupWeatherControllers } from './modules/routes'
 
 export const startApplication = async () => {
 
@@ -350,7 +367,7 @@ if (require.main === module) {
 }
 ```
 
-### 10. インフラストラクチャテスト (infra/[implementation].test.ts)
+### 11. インフラストラクチャテスト (infra/[implementation].test.ts)
 ```typescript
 import { describe, expect, it } from '@jest/globals';
 import { Effect, Either } from 'effect';
@@ -390,7 +407,7 @@ describe('getWeatherMock', () => {
 });
 ```
 
-### 11. 統合テスト (__tests__/integration/[feature]/[controller].test.ts)
+### 12. 統合テスト (__tests__/integration/[feature]/[controller].test.ts)
 ```typescript
 import express from 'express';
 import request from 'supertest';
@@ -457,11 +474,20 @@ describe('getWeatherController', () => {
    - ユースケース実装 (`applications/`)
 5. プレゼンテーション層の実装：
    - コントローラー実装 (`controllers/`)
-   - ルート設定 (`controllers/index.ts`)
-6. 統合テストの作成：
+6. 依存性注入とルーティングの設定：
+   - ファクトリー関数を `modules/factory/index.ts` に追加
+   - ルート設定を `modules/routes/index.ts` に追加
+7. 統合テストの作成：
    - `__tests__/integration/[feature]/`にテストファイル作成
-7. メインアプリケーションへの組み込み：
-   - `index.ts`でコントローラーセットアップ関数を呼び出し
+8. メインアプリケーションへの組み込み：
+   - `index.ts`でルートセットアップ関数を呼び出し（必要に応じて）
+
+### Clean Architecture 設計原則の確認
+
+- **依存関係の方向**: 内側の層（domain）は外側の層（infra, controllers）に依存しない
+- **Interface Segregation**: 大きなインターフェースではなく、機能ごとの関数型を使用
+- **Dependency Inversion**: 抽象（インターフェース）に依存し、具象（実装）に依存しない
+- **Single Responsibility**: 各層、各モジュールが単一の責務を持つ
 
 ## Effectを使う利点
 
@@ -477,5 +503,112 @@ describe('getWeatherController', () => {
 3. **エラーの分類**: ドメイン固有のエラーを定義して使い分ける
 4. **Effect.gen**: 複雑な処理は`Effect.gen`で読みやすく記述
 5. **テスト**: `Effect.either`を使ってエラーケースもテスト
+
+## コーディングAI向けガイドライン
+
+### CLAUDE.md ファイルの重要性
+- `CLAUDE.md` ファイルはClaude Code向けの詳細な指示書です
+- プロジェクトの構造、パターン、実装方針を明確に記述
+- AIがプロジェクトの設計思想を理解し、一貫性のあるコードを生成できます
+
+### AIアシスタント使用時のベストプラクティス
+
+#### 1. 構造の説明
+```markdown
+# このプロジェクトはClean Architectureに従っています
+- domain層: ビジネスロジックの中核
+- applications層: ユースケース実装（インタラクター）
+- controllers層: HTTP リクエスト/レスポンス処理
+- infra層: 外部システムとの接続
+```
+
+#### 2. 実装指示の例
+```markdown
+# 新機能実装時の指示例
+「userモジュールを追加してください。
+- エンティティ: User（id, name, email）
+- ユースケース: createUser, getUserById
+- リポジトリ: APIとモック実装
+- weatherモジュールと同じパターンで実装」
+```
+
+#### 3. 依存関係の説明
+```markdown
+# 依存関係の方向性
+- applications → domain repositories/usecases/entities
+- controllers → applications  
+- infra → domain repositories
+- factory → applications + infra
+- routes → factory
+```
+
+#### 4. テスト方針の明示
+```markdown
+# テスト戦略
+- Unit tests: infra層の実装をテスト
+- Integration tests: コントローラー経由のE2Eテスト
+- Effect.either() を使ったエラーケースのテスト
+```
+
+### AI向け実装パターン指示
+
+#### 関数型リポジトリパターン
+```typescript
+// 推奨: 関数型定義
+export type GetUserFunc = (id: string) => Effect.Effect<User, UserRepositoryError>;
+
+// 非推奨: 大きなインターフェース
+interface IUserRepository {
+  getUser: GetUserFunc;
+  createUser: CreateUserFunc;
+  // 肥大化しがち
+}
+```
+
+#### エラーハンドリングパターン
+```typescript
+// ドメイン固有エラーの定義
+export class UserRepositoryError extends Error {
+  readonly _tag = "UserRepositoryError";
+}
+
+// Effect での型安全なエラーハンドリング
+export type CreateUserFunc = (userData: CreateUserRequest) 
+  => Effect.Effect<User, UserRepositoryError | UserValidationError>;
+```
+
+#### 依存性注入パターン
+```typescript
+// Factory での DI 設定
+export const setupCreateUserController = () => {
+  const dependency = {
+    createUserFunc: createUserFromAPI  // または createUserMock
+  }
+  return createUserController(createUserUsecase(dependency));
+}
+```
+
+### コードレビュー時のチェックポイント
+
+1. **依存関係の方向性**: 内側の層が外側の層に依存していないか
+2. **責務の分離**: コントローラーにビジネスロジックが混入していないか  
+3. **型安全性**: unknown型からの型変換で型ガードを使用しているか
+4. **エラーハンドリング**: Effect型でエラーが表現されているか
+5. **テスタビリティ**: モック実装が提供されているか
+
+### AIツール使用時の効果的な質問例
+
+```markdown
+# 良い質問例
+「weatherモジュールと同じ構造でuserモジュールを作成してください。
+ただし、UserエンティティにはemailValidationが必要です。」
+
+「現在のgetWeatherUsecaseと同じパターンで、
+複数ユーザーを取得するgetUsersUsecaseを実装してください。」
+
+# 避けるべき曖昧な質問
+「ユーザー機能を作って」
+「APIを追加して」
+```
 
 このテンプレートを基に、新しいプロジェクトでClean Architecture + Effectの構成を素早く立ち上げることができます。
