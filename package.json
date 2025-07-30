@@ -16,7 +16,8 @@
   "description": "",
   "dependencies": {
     "effect": "^3.16.4",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "zod": "^4.0.13"
   },
   "devDependencies": {
     "@jest/globals": "^30.0.0-beta.3",

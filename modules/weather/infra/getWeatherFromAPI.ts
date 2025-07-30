@@ -1,16 +1,19 @@
 import { GetWeatherFunc } from "../domain/repositories";
-
+import { z } from "zod";
 import { Effect } from "effect";
 import { WeatherRepositoryError } from "../domain/entities/error";
 
-// 型ガード関数
-const isObject = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null;
-};
-
-const isArray = (value: unknown): value is unknown[] => {
-  return Array.isArray(value);
-};
+// APIレスポンスのスキーマ定義
+const WeatherAPIResponseSchema = z.object({
+  current_condition: z.array(
+    z.object({
+      temp_C: z.string(),
+      weatherDesc: z.array(z.object({
+        value: z.string()
+      })).optional()
+    })
+  ).min(1)
+});
 
 export const getWeatherFromAPI: GetWeatherFunc = (location) =>
   Effect.gen(function* () {
@@ -31,42 +34,27 @@ export const getWeatherFromAPI: GetWeatherFunc = (location) =>
       );
     }
 
-    // JSONパース - unknown型として受け取る
-    const data: unknown = yield* Effect.tryPromise({
+    // JSONパース
+    const data = yield* Effect.tryPromise({
       try: () => response.json(),
       catch: (error) => new WeatherRepositoryError(`JSON parse error: ${error}`)
     });
 
-    // Step 1: オブジェクトかチェック
-    if (!isObject(data)) {
-      return yield* Effect.fail(new WeatherRepositoryError("Response is not an object"));
-    }
-
-    // Step 2: current_conditionプロパティの存在チェック
-    if (!('current_condition' in data)) {
-      return yield* Effect.fail(new WeatherRepositoryError("Missing current_condition"));
-    }
-
-    const currentCondition = data.current_condition;
+    // Zodでバリデーション
+    const parseResult = WeatherAPIResponseSchema.safeParse(data);
     
-    // Step 3: current_conditionが配列かチェック
-    if (!isArray(currentCondition) || currentCondition.length === 0) {
-      return yield* Effect.fail(new WeatherRepositoryError("Invalid weather data format"));
+    if (!parseResult.success) {
+      return yield* Effect.fail(
+        new WeatherRepositoryError(
+          `Invalid API response format: ${parseResult.error.issues.map(issue => issue.message).join(', ')}`
+        )
+      );
     }
 
-    // Step 4: 最初の要素を取得して型チェック
-    const current = currentCondition[0];
-    if (!isObject(current)) {
-      return yield* Effect.fail(new WeatherRepositoryError("Invalid current condition format"));
-    }
-
-    // Step 5: 必要なプロパティを安全に取得
-    const tempC = current.temp_C;
-    if (typeof tempC !== 'string') {
-      return yield* Effect.fail(new WeatherRepositoryError("Temperature is not a string"));
-    }
-
-    const tempNumber = parseFloat(tempC);
+    const validatedData = parseResult.data;
+    const current = validatedData.current_condition[0];
+    
+    const tempNumber = parseFloat(current.temp_C);
     if (isNaN(tempNumber)) {
       return yield* Effect.fail(new WeatherRepositoryError("Temperature is not a valid number"));
     }
@@ -75,6 +63,6 @@ export const getWeatherFromAPI: GetWeatherFunc = (location) =>
       id: `${location}-${Date.now()}`,
       location: location,
       temperature: tempNumber,
-      description: typeof current.weatherDesc === 'string' ? current.weatherDesc : 'Unknown'
+      description: current.weatherDesc?.[0]?.value || 'Unknown'
     };
   });
